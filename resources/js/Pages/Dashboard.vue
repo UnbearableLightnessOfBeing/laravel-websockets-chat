@@ -25,7 +25,7 @@ import { Head } from '@inertiajs/vue3';
                     </div>
                     <img
                         src="/images/avatar-new.png"
-                        class="w-[265px]"
+                        class="image w-[265px]"
                         alt=""
                     />
                 </div>
@@ -33,3 +33,9 @@ import { Head } from '@inertiajs/vue3';
         </div>
     </AuthenticatedLayout>
 </template>
+
+<style lang="scss">
+// .image {
+//     opacity: 0.2;
+// }
+</style>
