@@ -1,6 +1,9 @@
 <?php
 
+use App\Http\Controllers\ChatController;
 use App\Http\Controllers\ProfileController;
+use App\Models\Chat;
+use App\Models\User;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -28,6 +31,31 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     return Inertia::render('Dashboard');
 })->middleware(['auth', 'verified'])->name('dashboard');
+
+Route::get('/users', function () {
+    return Inertia::render('UsersList', [
+        'users' => User::all(),
+    ]);
+})->middleware(['auth', 'verified'])->name('users');
+
+Route::get('/chats', function () {
+    return Inertia::render('ChatsList', [
+        'chats' => Chat::all()->filter(function($chat) {
+            $users = $chat->users;
+            foreach($users as $user) {
+                if($user->id === request()->user()->id) {
+                    return true;
+                }
+            }
+            return false;
+        }),
+    ]);
+})->middleware(['auth', 'verified'])->name('chats');
+
+// Route::get('/chats/{id}', [ChatController::class, 'index'])->middleware(['auth', 'verified']);
+Route::get('/chats/{id}', [ChatController::class, 'index'])->middleware(['auth', 'verified'])->name('chat');
+
+Route::post('/chats/{id}', [ChatController::class, 'store'])->middleware(['auth', 'verified'])->name('store-message');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
