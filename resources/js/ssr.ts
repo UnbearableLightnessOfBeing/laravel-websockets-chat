@@ -12,14 +12,18 @@ createServer((page) =>
         page,
         render: renderToString,
         title: (title) => `${title} - ${appName}`,
-        resolve: (name) => resolvePageComponent(`./Pages/${name}.vue`, import.meta.glob<DefineComponent>('./Pages/**/*.vue')),
+        resolve: (name) =>
+            resolvePageComponent(
+                `./Pages/${name}.vue`,
+                import.meta.glob<DefineComponent>('./Pages/**/*.vue')
+            ),
         setup({ App, props, plugin }) {
             return createSSRApp({ render: () => h(App, props) })
                 .use(plugin)
                 .use(ZiggyVue, {
-                    // @ts-expect-error
+                    // @ts-expect-error | so it works
                     ...page.props.ziggy,
-                    // @ts-expect-error
+                    // @ts-expect-error | so it works
                     location: new URL(page.props.ziggy.location),
                 });
         },
