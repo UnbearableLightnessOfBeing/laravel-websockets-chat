@@ -98,6 +98,11 @@ const makeDebounce = (ms: number) => {
             isTyping = true;
         }
 
+        if(!form.message) {
+            unwhisper();
+            isTyping = false;
+        }
+
         clearTimeout(timeout);
 
         timeout = setTimeout((): void => {
@@ -107,7 +112,7 @@ const makeDebounce = (ms: number) => {
     };
 };
 
-const onType: () => void = makeDebounce(2000);
+const onType: () => void = makeDebounce(1000);
 </script>
 
 <template>
