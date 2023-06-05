@@ -12,6 +12,7 @@ services:
         ports:
             - '${APP_PORT:-80}:80'
             - '${VITE_PORT:-5173}:${VITE_PORT:-5173}'
+            # - '${VITE_PORT:-5173}:5174'
             - '${LARAVEL_WEBSOCKET:-6001}:6001'
         environment:
             WWWUSER: '${WWWUSER}'

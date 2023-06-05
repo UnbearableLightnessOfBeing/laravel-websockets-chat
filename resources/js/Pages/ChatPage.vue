@@ -4,6 +4,7 @@ import AuthenticatedLayout from './../Layouts/AuthenticatedLayout.vue';
 import { Head, usePage, useForm } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
 import axios from 'axios';
+import { ref } from 'vue';
 
 type Message = {
     id: number;
@@ -21,13 +22,15 @@ const props = defineProps<{
     };
 }>();
 
-console.log(props.chat.messages);
+const messages = ref(props.chat.messages);
 
 const pageProps = usePage().props;
 
 const form = useForm({
     message: '',
 });
+
+const loaderMessage = ref<null | string>(null);
 
 const onSubmit = () => {
     axios
@@ -36,15 +39,75 @@ const onSubmit = () => {
         })
         .then((response) => {
             console.log(response.data.message);
-            form.reset();
+            loaderMessage.value = null;
         })
-        .catch();
+        .catch((error) => {
+            console.log(error);
+            loaderMessage.value = null;
+        });
+
+    loaderMessage.value = form.message;
+    form.reset();
 };
 
 //@ts-expect-error Echo
 Echo.private(`chats.${props.chat.id}`).listen('.message.sent', (e) => {
-    console.log(e);
+    messages.value.push(e.message);
+    loaderMessage.value = null;
 });
+
+const typingUser = ref<null | string>(null);
+
+//@ts-expect-error Echo
+Echo.private(`chats.${props.chat.id}`).listenForWhisper('typing', (e) => {
+    typingUser.value = e.name;
+    console.log('typing: ', e.name);
+});
+
+//@ts-expect-error Echo
+Echo.private(`chats.${props.chat.id}`).listenForWhisper(
+    'stopped typing',
+    (e: any) => {
+        if (typingUser.value === e.name) {
+            typingUser.value = null;
+        }
+    }
+);
+
+const whisper = (): void => {
+    //@ts-expect-error Echo
+    Echo.private(`chats.${props.chat.id}`).whisper('typing', {
+        name: pageProps.auth.user.name,
+    });
+};
+
+const unwhisper = (): void => {
+    //@ts-expect-error Echo
+    Echo.private(`chats.${props.chat.id}`).whisper('stopped typing', {
+        name: pageProps.auth.user.name,
+    });
+};
+
+const makeDebounce = (ms: number) => {
+    let isTyping = false;
+    let timeout: any;
+
+    return (): void => {
+        if (!isTyping) {
+            whisper();
+            isTyping = true;
+        }
+
+        clearTimeout(timeout);
+
+        timeout = setTimeout((): void => {
+            unwhisper();
+            isTyping = false;
+        }, ms);
+    };
+};
+
+const onType: () => void = makeDebounce(2000);
 </script>
 
 <template>
@@ -55,7 +118,8 @@ Echo.private(`chats.${props.chat.id}`).listen('.message.sent', (e) => {
             <h2
                 class="font-semibold text-xl text-gray-800 dark:text-gray-200 leading-tight"
             >
-                Chat: <span class="dark:text-indigo-500">{{ chat.title }}</span>
+                Chat:
+                <span class="dark:text-indigo-500">{{ chat.title }}</span>
             </h2>
         </template>
         <div class="py-12">
@@ -91,10 +155,26 @@ Echo.private(`chats.${props.chat.id}`).listen('.message.sent', (e) => {
                                         pageProps.auth.user.id ===
                                         message.user_id,
                                 }"
-                                v-for="message in chat.messages"
+                                v-for="message in messages"
                                 :key="message.id"
                             >
                                 {{ message.message }}
+                            </div>
+                            <div
+                                v-if="loaderMessage"
+                                class="flex gap-[5px] dark:bg-indigo-400 rounded-md px-3 py-2 w-fit self-end"
+                            >
+                                <div class="animate-spin">🎁</div>
+                                <div>{{ loaderMessage }}</div>
+                            </div>
+                            <div
+                                v-if="
+                                    typingUser &&
+                                    pageProps.auth.user.name !== typingUser
+                                "
+                                class="dark:text-gray-100 animate-pulse self-center"
+                            >
+                                {{ typingUser }} is typing...
                             </div>
                         </div>
                         <form
@@ -118,6 +198,7 @@ Echo.private(`chats.${props.chat.id}`).listen('.message.sent', (e) => {
                                 id="message"
                                 class="dark:bg-transparent border-none w-full focus:ring-0 focus:text-black focus:font-semibold dark:text-gray-900 font-semibold"
                                 v-model="form.message"
+                                @input="onType"
                                 required
                                 autofocus
                             />

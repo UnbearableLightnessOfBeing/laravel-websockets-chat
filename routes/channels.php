@@ -20,8 +20,11 @@ Broadcast::channel('App.Models.User.{id}', function ($user, $id) {
 });
 
 Broadcast::channel('chats.{chatId}', function (User $user, int $chatId) {
-    // $user = Chat::find($chatId)->users->find($user->id);
+    $user = Chat::find($chatId)->users->find($user->id);
 
-    // return $user ? true : false;
-    return true;
+    return $user ? true : false;
 });
+
+// Broadcast::channel('my-channel', function (User $user, int $chatId) {
+//     return true;
+// });

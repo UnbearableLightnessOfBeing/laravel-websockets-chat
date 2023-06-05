@@ -18,8 +18,10 @@ window.axios.defaults.headers.common['X-Requested-With'] = 'XMLHttpRequest';
 import Echo from 'laravel-echo';
 
 import Pusher from 'pusher-js';
+//@ts-expect-error Pusher
 window.Pusher = Pusher;
 
+//@ts-expect-error Echo
 window.Echo = new Echo({
     broadcaster: 'pusher',
     key: import.meta.env.VITE_PUSHER_APP_KEY,
@@ -28,6 +30,7 @@ window.Echo = new Echo({
     wsPort: import.meta.env.VITE_PUSHER_PORT ?? 6001,
     // wssPort: import.meta.env.VITE_PUSHER_PORT ?? 443,
     forceTLS: false,
+    encrypted: false,
     disableStats: true,
     enabledTransports: ['ws', 'wss'],
 });
