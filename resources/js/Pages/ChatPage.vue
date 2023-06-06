@@ -4,7 +4,7 @@ import AuthenticatedLayout from './../Layouts/AuthenticatedLayout.vue';
 import { Head, usePage, useForm } from '@inertiajs/vue3';
 import TextInput from '@/Components/TextInput.vue';
 import axios from 'axios';
-import { ref } from 'vue';
+import { ref, onMounted, watch } from 'vue';
 
 type Message = {
     id: number;
@@ -54,9 +54,15 @@ const onSubmit = () => {
 Echo.private(`chats.${props.chat.id}`).listen('.message.sent', (e) => {
     messages.value.push(e.message);
     loaderMessage.value = null;
+
+    scrollChatToBottom();
 });
 
 const typingUser = ref<null | string>(null);
+
+watch(typingUser, () => {
+    scrollChatToBottom();
+});
 
 //@ts-expect-error Echo
 Echo.private(`chats.${props.chat.id}`).listenForWhisper('typing', (e) => {
@@ -98,7 +104,7 @@ const makeDebounce = (ms: number) => {
             isTyping = true;
         }
 
-        if(!form.message) {
+        if (!form.message) {
             unwhisper();
             isTyping = false;
         }
@@ -113,6 +119,18 @@ const makeDebounce = (ms: number) => {
 };
 
 const onType: () => void = makeDebounce(1000);
+
+const chatEl = ref<null | HTMLElement>(null);
+
+const scrollChatToBottom = (): void => {
+    if (chatEl.value) {
+        chatEl.value.scrollTo(0, chatEl.value.scrollHeight);
+    }
+};
+
+onMounted((): void => {
+    scrollChatToBottom();
+});
 </script>
 
 <template>
@@ -151,7 +169,8 @@ const onType: () => void = makeDebounce(1000);
                             }}</span>
                         </div>
                         <div
-                            class="dark:bg-gray-600 rounded-xl p-6 max-w-[500px] mx-auto flex flex-col gap-[15px]"
+                            ref="chatEl"
+                            class="dark:bg-gray-600 rounded-xl p-6 max-w-[500px] mx-auto flex flex-col gap-[15px] max-h-[550px] overflow-y-scroll"
                         >
                             <div
                                 class="dark:bg-gray-500 rounded-md px-3 py-2 w-fit"

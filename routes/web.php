@@ -40,17 +40,21 @@ Route::get('/users', function () {
 
 Route::get('/chats', function () {
     return Inertia::render('ChatsList', [
-        'chats' => Chat::all()->filter(function($chat) {
-            $users = $chat->users;
-            foreach($users as $user) {
-                if($user->id === request()->user()->id) {
-                    return true;
-                }
-            }
-            return false;
-        }),
+        // 'chats' => Chat::all()->filter(function($chat) {
+        //     $users = $chat->users;
+        //     foreach($users as $user) {
+        //         if($user->id === request()->user()->id) {
+        //             return true;
+        //         }
+        //     }
+        //     return false;
+        // }),
+        'chats' => User::find(request()->user()->id)->chats()->with(['users'])->get(),
+        // 'chats' => Chat::all()->where('users.id', request()->user()->id),
     ]);
 })->middleware(['auth', 'verified'])->name('chats');
+
+Route::post('/chats', [ChatController::class, 'openOrCreate'])->middleware(['auth', 'verified'])->name('open.or.create.chat');
 
 // Route::get('/chats/{id}', [ChatController::class, 'index'])->middleware(['auth', 'verified']);
 Route::get('/chats/{id}', [ChatController::class, 'index'])->middleware(['auth', 'verified'])->name('chat');
